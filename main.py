@@ -13,6 +13,10 @@ while True:
     if line.lower() in ("x", "exit"):
         break
 
+    if line.lower() == "data":
+        print(base.read_all())
+        continue
+
     lexer = Lexer(line)
     result = lexer.tokenize()
 

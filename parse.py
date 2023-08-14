@@ -13,15 +13,44 @@ class Parser:
             return self.current_token
         elif self.current_token.type.startswith("VAR"):
             return self.current_token
+        elif self.current_token.value in ("+", "-"):
+            operator = self.current_token
+            self.forward()
+            operand = self.expression()
+
+            return [operator, operand]
         
-    def assignment_expression(self) -> list:
+    def term(self):
         left_node = self.factor()
         self.forward()
+
+        while self.current_token.value in ("*", "/"):
+            operator = self.current_token
+            self.forward()
+            right_node = self.factor()
+            self.forward()
+            left_node = [left_node, operator, right_node]
+
+        return left_node
+        
+    def expression(self) -> list:
+        left_node = self.term()
+
+        while self.current_token.value in ("+", "-"):
+            operator = self.current_token
+            self.forward()
+            right_node = self.term()
+            left_node = [left_node, operator, right_node]
+
+        return left_node
+        
+    def assignment_expression(self) -> list:
+        left_node = self.expression()
         
         while self.current_token.value == "=":
             operator = self.current_token
             self.forward()
-            right_node = self.factor()
+            right_node = self.expression()
             left_node = [left_node, operator, right_node]
         return left_node
 

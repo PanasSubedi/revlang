@@ -7,7 +7,7 @@ class Lexer:
 
     STOP_WORDS = [" "]
     LETTERS = "abcdefghijklmnopqrstuvwxyz"
-    OPERATORS = "="
+    OPERATORS = "=+-*/"
     NUMBERS = "0123456789"
     VALID_VARIABLE_CHARACTERS = LETTERS + NUMBERS + "_"
     DECLARATIONS = ["let"]
