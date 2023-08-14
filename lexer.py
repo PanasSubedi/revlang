@@ -5,11 +5,11 @@ from error import Error
 
 class Lexer:
 
-    STOP_WORDS = [" "]
-    LETTERS = "abcdefghijklmnopqrstuvwxyz"
-    OPERATORS = "=+-*/"
     NUMBERS = "0123456789"
+    LETTERS = "abcdefghijklmnopqrstuvwxyz"
     VALID_VARIABLE_CHARACTERS = LETTERS + NUMBERS + "_"
+    OPERATORS = "=+-*/()"
+    STOP_WORDS = [" "]
     DECLARATIONS = ["let"]
     VARIABLE_SEPARATOR = ","
     STATEMENT_ENDER = ";"
@@ -20,6 +20,7 @@ class Lexer:
         self.tokens = []
         self.character = self.line[self.index]
         self.current_token = None
+        self.brackets_count = 0
 
     def forward(self) -> None:
         self.index += 1
@@ -56,6 +57,10 @@ class Lexer:
                 continue
 
             elif self.character in Lexer.OPERATORS:
+                if self.character == "(":
+                    self.brackets_count += 1
+                elif self.character == ")":
+                    self.brackets_count -= 1
                 self.current_token = Operator(self.character)
                 self.forward()
 
@@ -89,5 +94,8 @@ class Lexer:
 
         if self.current_token.type != "END":
             return Error("Invalid statement end.", self.index)
+        
+        if self.brackets_count != 0:
+            return Error("Invalid number of brackets.", 0)
         
         return self.tokens

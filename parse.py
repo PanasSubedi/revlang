@@ -11,6 +11,10 @@ class Parser:
     def factor(self):
         if self.current_token.type in ("FLT", "INT"):
             return self.current_token
+        elif self.current_token.value == "(":
+            self.forward()
+            expression = self.assignment_expression()
+            return expression
         elif self.current_token.type.startswith("VAR"):
             return self.current_token
         elif self.current_token.value in ("+", "-"):
