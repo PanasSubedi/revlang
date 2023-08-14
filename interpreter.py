@@ -7,6 +7,7 @@ class Interpreter:
 
     def convert_INT(self, value): return int(value)
     def convert_FLT(self, value): return float(value)
+    def convert_VAR(self, id): return getattr(self, f"convert_{self.data.read(id).type}")(self.data.read(id).value)
 
     def compute_binary(self, left, operator, right) -> None:
         left_type = "VAR" if str(left.type).startswith("VAR") else str(left.type)
