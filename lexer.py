@@ -1,5 +1,5 @@
 from tokens import Declaration, Variable, VariableSeparator,\
-    StatementEnder
+    StatementEnder, Operator, Integer, Float
 
 from error import Error
 
@@ -7,6 +7,7 @@ class Lexer:
 
     STOP_WORDS = [" "]
     LETTERS = "abcdefghijklmnopqrstuvwxyz"
+    OPERATORS = "="
     NUMBERS = "0123456789"
     VALID_VARIABLE_CHARACTERS = LETTERS + NUMBERS + "_"
     DECLARATIONS = ["let"]
@@ -32,12 +33,38 @@ class Lexer:
             self.forward()
 
         return word
+    
+    def extract_number(self) -> str:
+        number = ""
+        is_float = False
+
+        while (self.character in Lexer.NUMBERS or self.character == ".") and (self.index < len(self.line)):
+            if self.character == "." and not is_float:
+                is_float = True
+            elif self.character == "." and is_float:
+                return Error("Not a number.", self.index)
+            
+            number += self.character
+            self.forward()
+
+        return Integer(number) if not is_float else Float(number)
 
     def tokenize(self) -> list:
         while self.index < len(self.line):
             if self.character in Lexer.STOP_WORDS:
                 self.forward()
                 continue
+
+            elif self.character in Lexer.OPERATORS:
+                self.current_token = Operator(self.character)
+                self.forward()
+
+            elif self.character in Lexer.NUMBERS:
+                number = self.extract_number()
+                if isinstance(number, Error):
+                    return number
+            
+                self.current_token = number
 
             elif self.character in Lexer.LETTERS:
                 word = self.extract_word()

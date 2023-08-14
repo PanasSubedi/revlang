@@ -7,6 +7,23 @@ class Parser:
     def variable(self) -> None:
         if self.current_token.type.startswith("VAR"):
             return self.current_token
+        
+    def factor(self):
+        if self.current_token.type in ("FLT", "INT"):
+            return self.current_token
+        elif self.current_token.type.startswith("VAR"):
+            return self.current_token
+        
+    def assignment_expression(self) -> list:
+        left_node = self.factor()
+        self.forward()
+        
+        while self.current_token.value == "=":
+            operator = self.current_token
+            self.forward()
+            right_node = self.factor()
+            left_node = [left_node, operator, right_node]
+        return left_node
 
     def statement(self) -> list:
         if self.current_token.type == "DECL":
@@ -17,6 +34,9 @@ class Parser:
                 variables.append(self.variable())
                 self.forward()
             return [declaration_token, variables]
+        
+        elif self.current_token.type in ("INT", "FLT", "OP") or self.current_token.type.startswith("VAR"):
+            return self.assignment_expression()
         
     def parse(self) -> list:
         return self.statement()

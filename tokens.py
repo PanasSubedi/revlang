@@ -25,3 +25,11 @@ class StatementEnder(Token):
 class Operator(Token):
     def __init__(self, token_value: str) -> None:
         super().__init__("OP", token_value)
+
+class Integer(Token):
+    def __init__(self, token_value: str) -> None:
+        super().__init__("INT", token_value)
+
+class Float(Token):
+    def __init__(self, token_value: str) -> None:
+        super().__init__("FLT", token_value)
