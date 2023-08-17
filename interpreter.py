@@ -73,7 +73,7 @@ class Interpreter:
                     self.data.write(variable, None)
                 return
             elif tree[0].value == "print":
-                return self.interpret(tree[1:])
+                return self.interpret(tree[1])
             else:
                 expression = tree[1]
                 if isinstance(expression, list):

@@ -24,7 +24,8 @@ def run_line(line, base):
         interpreter = Interpreter(tree, base)
         result = interpreter.interpret()
 
-        print(result)
+        if result is not None:
+            print(result.value)
     
     return True
 

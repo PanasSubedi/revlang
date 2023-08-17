@@ -83,8 +83,7 @@ class Parser:
     def print_statement(self) -> list:
         self.forward()
         print_variable = self.comparison_expression()
-
-        return print_variable
+        return print_variable if isinstance(print_variable, list) == 1 else [print_variable,]
 
     def statement(self) -> list:
         if self.current_token.type == "DECL":

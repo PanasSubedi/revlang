@@ -24,12 +24,12 @@ while True:
         print(f"{' '*(result.index + len(PROMPT))}^\nError: {result.description}")
     else:
         tokens = lexer.tokenize()
-        #print(f"Tokens: {tokens}")
+        print(f"Tokens: {tokens}")
 
         parser = Parser(tokens)
         tree = parser.parse()
 
-        #print(f"Tree: {tree}")
+        print(f"Tree: {tree}")
 
         interpreter = Interpreter(tree, base)
         result = interpreter.interpret()
