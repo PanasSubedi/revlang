@@ -33,3 +33,15 @@ class Integer(Token):
 class Float(Token):
     def __init__(self, token_value: str) -> None:
         super().__init__("FLT", token_value)
+
+class BooleanOperator(Token):
+    def __init__(self, token_value: str) -> None:
+        super().__init__("BOOL", token_value)
+
+class ComparisonOperator(Token):
+    def __init__(self, token_value: str) -> None:
+        super().__init__("CMP", token_value)
+
+class Keyword(Token):
+    def __init__(self, token_value: str) -> None:
+        super().__init__("KEY", token_value)

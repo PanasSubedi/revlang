@@ -1,5 +1,6 @@
 from tokens import Declaration, Variable, VariableSeparator,\
-    StatementEnder, Operator, Integer, Float
+    StatementEnder, Operator, Integer, Float, BooleanOperator,\
+    ComparisonOperator, Keyword
 
 from error import Error
 
@@ -13,6 +14,10 @@ class Lexer:
     DECLARATIONS = ["let"]
     VARIABLE_SEPARATOR = ","
     STATEMENT_ENDER = ";"
+    BOOLEAN_OPERATORS = ["and", "or", "not"]
+    COMPARISON_OPERATORS = ["<", ">", ">=", "<=", "?=", "<>"]
+    COMPARISON_CHARACTERS = "<>=?"
+    KEYWORDS = ["print"]
 
     def __init__(self, line: str) -> None:
         self.line = line
@@ -34,6 +39,13 @@ class Lexer:
             self.forward()
 
         return word
+    
+    def extract_comparison_operator(self) -> str:
+        comparison_operator = ""
+        while self.character in Lexer.COMPARISON_CHARACTERS and self.index < len(self.line):
+            comparison_operator += self.character
+            self.forward()
+        return comparison_operator
     
     def extract_number(self) -> str:
         number = ""
@@ -76,6 +88,12 @@ class Lexer:
                 if word in Lexer.DECLARATIONS:
                     self.current_token = Declaration(word)
 
+                elif word in Lexer.BOOLEAN_OPERATORS:
+                    self.current_token = BooleanOperator(word)
+
+                elif word in Lexer.KEYWORDS:
+                    self.current_token = Keyword(word)
+
                 else:
                     self.current_token = Variable(word)
 
@@ -86,6 +104,10 @@ class Lexer:
             elif self.character == Lexer.STATEMENT_ENDER:
                 self.current_token = StatementEnder()
                 self.forward()
+
+            elif self.character in Lexer.COMPARISON_CHARACTERS:
+                comparison_operator = self.extract_comparison_operator()
+                self.current_token = ComparisonOperator(comparison_operator)
 
             else:
                 return Error("Invalid syntax.", self.index)

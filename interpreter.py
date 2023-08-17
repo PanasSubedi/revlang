@@ -7,24 +7,59 @@ class Interpreter:
 
     def convert_INT(self, value): return int(value)
     def convert_FLT(self, value): return float(value)
-    def convert_VAR(self, id): return getattr(self, f"convert_{self.data.read(id).type}")(self.data.read(id).value)
+    def convert_VAR(self, id):
+        data = self.data.read(id)
+        return None if data is None else getattr(self, f"convert_{data.type}")(data.value)
 
-    def compute_binary(self, left, operator, right) -> None:
+    def compute_single(self, operand):
+        operand_type = "VAR" if str(operand.type).startswith("VAR") else str(operand.type)
+        output = getattr(self, f"convert_{operand_type}")(operand.value)
+
+        if operand_type == "VAR":
+            output_check = self.data.read(operand.value)
+            if output_check is None:
+                return None
+            else:
+                output_check = output_check.type
+        else:
+            output_check = operand.type
+
+        return Integer(output) if output_check == "INT" else Float(output)
+
+    def compute_unary(self, operator, operand) -> None:
+        operand_type = "VAR" if str(operand.type).startswith("VAR") else str(operand.type)
+        operand = getattr(self, f"convert_{operand_type}")(operand.value)
+
+        if operator.value == "+": output = operand
+        elif operator.value == "-": output = -operand
+        elif operator.value == "not": output = 1 if not operand else 0
+
+        return Integer(output) if operand_type == "INT" else Float(output)
+
+    def compute_binary(self, left, operator, right):
         left_type = "VAR" if str(left.type).startswith("VAR") else str(left.type)
         right_type = "VAR" if str(right.type).startswith("VAR") else str(right.type)
 
         if operator.value == "=":
             left.type = f"VAR({right_type})"
             self.data.write(left, right)
-            return self.data.read_all()
+            return
         
         left = getattr(self, f"convert_{left_type}")(left.value)
         right = getattr(self, f"convert_{right_type}")(right.value)
 
         if operator.value == "+": output = left + right
         elif operator.value == "-": output = left - right
-        if operator.value == "*": output = left * right
-        if operator.value == "/": output = left / right
+        elif operator.value == "*": output = left * right
+        elif operator.value == "/": output = left / right
+        elif operator.value == "and": output = 1 if left and right else 0
+        elif operator.value == "or": output = 1 if left or right else 0
+        elif operator.value == "<": output = 1 if left < right else 0
+        elif operator.value == ">": output = 1 if left > right else 0
+        elif operator.value == "<=": output = 1 if left <= right else 0
+        elif operator.value == ">=": output = 1 if left >= right else 0
+        elif operator.value == "?=": output = 1 if left == right else 0
+        elif operator.value == "<>": output = 1 if left != right else 0
 
         return Float(output) if ("FLT" in (left_type, right_type) or operator.value == "/") else Integer(output)
 
@@ -36,10 +71,20 @@ class Interpreter:
                 variables = tree[1]
                 for variable in variables:
                     self.data.write(variable, None)
-                return self.data.read_all()
+                return
+            elif tree[0].value == "print":
+                return self.interpret(tree[1:])
+            else:
+                expression = tree[1]
+                if isinstance(expression, list):
+                    expression = self.interpret(expression)
+                return self.compute_unary(tree[0], expression)
             
         elif not isinstance(tree, list):
             return tree
+        
+        elif len(tree) == 1:
+            return self.compute_single(tree[0])
         
         else:
             left_node = tree[0]

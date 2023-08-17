@@ -15,12 +15,16 @@ class Parser:
             self.forward()
             expression = self.assignment_expression()
             return expression
+        elif self.current_token.value == "not":
+            operator = self.current_token
+            self.forward()
+            return [operator, self.assignment_expression()]
         elif self.current_token.type.startswith("VAR"):
             return self.current_token
         elif self.current_token.value in ("+", "-"):
             operator = self.current_token
             self.forward()
-            operand = self.expression()
+            operand = self.assignment_expression()
 
             return [operator, operand]
         
@@ -47,16 +51,40 @@ class Parser:
             left_node = [left_node, operator, right_node]
 
         return left_node
-        
-    def assignment_expression(self) -> list:
+    
+    def boolean_expression(self) -> list:
         left_node = self.expression()
-        
-        while self.current_token.value == "=":
+        while self.current_token.value in ("and", "or"):
             operator = self.current_token
             self.forward()
             right_node = self.expression()
             left_node = [left_node, operator, right_node]
         return left_node
+    
+    def comparison_expression(self) -> list:
+        left_node = self.boolean_expression()
+        while self.current_token.type == "CMP":
+            operator = self.current_token
+            self.forward()
+            right_node = self.boolean_expression()
+            left_node = [left_node, operator, right_node]
+        return left_node
+        
+    def assignment_expression(self) -> list:
+        left_node = self.comparison_expression()
+        
+        while self.current_token.value == "=":
+            operator = self.current_token
+            self.forward()
+            right_node = self.comparison_expression()
+            left_node = [left_node, operator, right_node]
+        return left_node
+    
+    def print_statement(self) -> list:
+        self.forward()
+        print_variable = self.comparison_expression()
+
+        return print_variable
 
     def statement(self) -> list:
         if self.current_token.type == "DECL":
@@ -68,11 +96,19 @@ class Parser:
                 self.forward()
             return [declaration_token, variables]
         
-        elif self.current_token.type in ("INT", "FLT", "OP") or self.current_token.type.startswith("VAR"):
+        elif self.current_token.value == "print":
+            return [self.current_token, self.print_statement()]
+        
+        #elif self.current_token.type in ("INT", "FLT", "OP") or self.current_token.type.startswith("VAR") or self.current_token.value == "not":
+        else:
             return self.assignment_expression()
         
     def parse(self) -> list:
-        return self.statement()
+        statement = self.statement()
+        if not isinstance(statement, list):
+            return [statement,]
+        else:
+            return statement
     
     def forward(self) -> None:
         self.index += 1
