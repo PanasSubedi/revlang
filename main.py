@@ -1,40 +1,5 @@
-from lexer import Lexer
-from error import Error
-from parse import Parser
-from interpreter import Interpreter
-from data import Data
+from Codefile import Code
 
-PROMPT = "$> "
-
-base = Data()
-
-while True:
-    line = input(PROMPT)
-    if line.lower() in ("x", "exit"):
-        break
-
-    if line.lower() == "data":
-        print(base.read_all())
-        continue
-
-    lexer = Lexer(line)
-    result = lexer.tokenize()
-
-    if isinstance(result, Error):
-        print(f"{' '*(result.index + len(PROMPT))}^\nError: {result.description}")
-    else:
-        tokens = lexer.tokenize()
-        print(f"Tokens: {tokens}")
-
-        parser = Parser(tokens)
-        tree = parser.parse()
-
-        print(f"Tree: {tree}")
-
-        interpreter = Interpreter(tree, base)
-        result = interpreter.interpret()
-
-        if result is not None:
-            print(result.value)
-
-
+code = Code("main.rl", stepping=True)
+code.load()
+code.run()

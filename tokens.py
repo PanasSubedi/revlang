@@ -18,10 +18,6 @@ class VariableSeparator(Token):
     def __init__(self) -> None:
         super().__init__("SEP", None)
 
-class StatementEnder(Token):
-    def __init__(self) -> None:
-        super().__init__("END", None)
-
 class Operator(Token):
     def __init__(self, token_value: str) -> None:
         super().__init__("OP", token_value)
@@ -45,3 +41,11 @@ class ComparisonOperator(Token):
 class Keyword(Token):
     def __init__(self, token_value: str) -> None:
         super().__init__("KEY", token_value)
+
+class Separator(Token):
+    def __init__(self, token_value: str) -> None:
+        super().__init__("SEP", token_value)
+
+class BoolResult(Token):
+    def __init__(self, token_value: bool) -> None:
+        super().__init__("BOOL_RES", token_value)

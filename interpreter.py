@@ -1,9 +1,12 @@
-from tokens import Float, Integer
+from tokens import Float, Integer, BoolResult
 
 class Interpreter:
-    def __init__(self, tree, base) -> None:
+    def __init__(self, tree, base, direction=1, line_number=None, statement_type=None) -> None:
         self.tree = tree
         self.data = base
+        self.direction = direction
+        self.line_number = line_number
+        self.statement_type = statement_type
 
     def convert_INT(self, value): return int(value)
     def convert_FLT(self, value): return float(value)
@@ -41,9 +44,22 @@ class Interpreter:
         right_type = "VAR" if str(right.type).startswith("VAR") else str(right.type)
 
         if operator.value == "=":
-            left.type = f"VAR({right_type})"
-            self.data.write(left, right)
-            return
+
+            if self.direction == 0 and self.statement_type.type == "assignment":
+                original_token = self.data.meta.get(int(self.line_number)-1).get("original", None)
+                if original_token is None:
+                    left.type = f"VAR(?)"
+                    self.data.write(left, None)
+                else:
+                    left.type = f"VAR({original_token.type})"
+                    self.data.write(left, original_token)
+                return
+                
+            else:
+                left.type = f"VAR({right_type})"
+                original_value = self.data.read(left.value)
+                self.data.write(left, right)
+                return original_value
         
         left = getattr(self, f"convert_{left_type}")(left.value)
         right = getattr(self, f"convert_{right_type}")(right.value)
@@ -61,7 +77,7 @@ class Interpreter:
         elif operator.value == "?=": output = 1 if left == right else 0
         elif operator.value == "<>": output = 1 if left != right else 0
 
-        return Float(output) if ("FLT" in (left_type, right_type) or operator.value == "/") else Integer(output)
+        return Float(output) if (isinstance(left, float) or isinstance(right, float) or operator.value == "/") else Integer(output)
 
     def interpret(self, tree=None):
         if tree is None: tree = self.tree
@@ -70,10 +86,19 @@ class Interpreter:
             if tree[0].type == "DECL":
                 variables = tree[1]
                 for variable in variables:
-                    self.data.write(variable, None)
+                    if self.direction == 1:
+                        self.data.write(variable, None)
+                    else:
+                        self.data.remove(variable)
                 return
             elif tree[0].value == "print":
                 return self.interpret(tree[1])
+            elif tree[0].value in ("if", "elif"):
+                return BoolResult(self.interpret(tree[1]))
+            elif tree[0].value in ("else"):
+                return BoolResult(Integer(1))
+            elif tree[0].value == "while":
+                return BoolResult(self.interpret(tree[1]))
             else:
                 expression = tree[1]
                 if isinstance(expression, list):

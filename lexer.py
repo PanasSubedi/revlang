@@ -1,6 +1,8 @@
 from tokens import Declaration, Variable, VariableSeparator,\
-    StatementEnder, Operator, Integer, Float, BooleanOperator,\
-    ComparisonOperator, Keyword
+    Operator, Integer, Float, BooleanOperator,\
+    ComparisonOperator, Keyword, Separator
+from statement_types import StatementType
+
 
 from error import Error
 
@@ -10,22 +12,24 @@ class Lexer:
     LETTERS = "abcdefghijklmnopqrstuvwxyz"
     VALID_VARIABLE_CHARACTERS = LETTERS + NUMBERS + "_"
     OPERATORS = "=+-*/()"
-    STOP_WORDS = [" "]
+    STOP_WORDS = [" ", "}"]
     DECLARATIONS = ["let"]
     VARIABLE_SEPARATOR = ","
-    STATEMENT_ENDER = ";"
     BOOLEAN_OPERATORS = ["and", "or", "not"]
     COMPARISON_OPERATORS = ["<", ">", ">=", "<=", "?=", "<>"]
     COMPARISON_CHARACTERS = "<>=?"
-    KEYWORDS = ["print"]
+    KEYWORDS = ["print", "if", "elif", "else", "while"]
+    SEPARATORS = "{}"
 
-    def __init__(self, line: str) -> None:
+    def __init__(self, line: str, line_number: int) -> None:
         self.line = line
         self.index = 0
         self.tokens = []
         self.character = self.line[self.index]
         self.current_token = None
         self.brackets_count = 0
+        self.line_number = line_number
+        self.statement_type = None
 
     def forward(self) -> None:
         self.index += 1
@@ -62,7 +66,7 @@ class Lexer:
 
         return Integer(number) if not is_float else Float(number)
 
-    def tokenize(self) -> list:
+    def tokenize(self) -> tuple:
         while self.index < len(self.line):
             if self.character in Lexer.STOP_WORDS:
                 self.forward()
@@ -73,6 +77,10 @@ class Lexer:
                     self.brackets_count += 1
                 elif self.character == ")":
                     self.brackets_count -= 1
+
+                if self.character == "=":
+                    self.statement_type = StatementType("assignment")
+
                 self.current_token = Operator(self.character)
                 self.forward()
 
@@ -86,38 +94,43 @@ class Lexer:
             elif self.character in Lexer.LETTERS:
                 word = self.extract_word()
                 if word in Lexer.DECLARATIONS:
+                    self.statement_type = StatementType("declaration")
                     self.current_token = Declaration(word)
 
                 elif word in Lexer.BOOLEAN_OPERATORS:
                     self.current_token = BooleanOperator(word)
 
                 elif word in Lexer.KEYWORDS:
+                    self.statement_type = StatementType(word)
                     self.current_token = Keyword(word)
 
                 else:
+                    if self.index > 1 and self.tokens[0].value == word and self.statement_type.type == "assignment":
+                        self.statement_type = StatementType("update")
                     self.current_token = Variable(word)
+
+            elif self.character in Lexer.SEPARATORS:
+                self.current_token = Separator(self.character)
+                self.forward()
 
             elif self.character == Lexer.VARIABLE_SEPARATOR:
                 self.current_token = VariableSeparator()
-                self.forward()
-
-            elif self.character == Lexer.STATEMENT_ENDER:
-                self.current_token = StatementEnder()
                 self.forward()
 
             elif self.character in Lexer.COMPARISON_CHARACTERS:
                 comparison_operator = self.extract_comparison_operator()
                 self.current_token = ComparisonOperator(comparison_operator)
 
+            elif self.character == ";":
+                self.forward()
+                continue
+
             else:
-                return Error("Invalid syntax.", self.index)
-
+                return Error("Invalid syntax.", self.line_number, self.index)
+            
             self.tokens.append(self.current_token)
-
-        if self.current_token.type != "END":
-            return Error("Invalid statement end.", self.index)
         
         if self.brackets_count != 0:
-            return Error("Invalid number of brackets.", 0)
-        
-        return self.tokens
+            return Error("Invalid number of brackets", self.line_number, 0)
+
+        return self.tokens, self.statement_type
